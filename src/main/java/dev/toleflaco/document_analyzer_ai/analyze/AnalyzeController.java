@@ -1,5 +1,6 @@
 package dev.toleflaco.document_analyzer_ai.analyze;
 
+import dev.toleflaco.document_analyzer_ai.observability.LlmLoggingAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -21,9 +22,11 @@ public class AnalyzeController {
 
     public AnalyzeController(
             ChatClient.Builder chatClientBuilder,
-            @Value("classpath:prompts/analyze-cv.st") Resource promptResource
+            @Value("classpath:prompts/analyze-cv.st") Resource promptResource, LlmLoggingAdvisor loggingAdvisor
     ) throws IOException {
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = chatClientBuilder
+                .defaultAdvisors(loggingAdvisor)
+                .build();
         this.promptTemplateText = promptResource.getContentAsString(StandardCharsets.UTF_8);
     }
 

@@ -1,5 +1,6 @@
 package dev.toleflaco.document_analyzer_ai.chat;
 
+import dev.toleflaco.document_analyzer_ai.observability.LlmLoggingAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -12,9 +13,9 @@ public class ChatController {
 
     private final ChatClient chatClient;
 
-    public ChatController(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory) {
+    public ChatController(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory, LlmLoggingAdvisor loggingAdvisor) {
         this.chatClient = chatClientBuilder
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),loggingAdvisor)
                 .build();
     }
 
