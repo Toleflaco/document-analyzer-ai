@@ -14,8 +14,13 @@ public class ChatController {
     private final ChatClient chatClient;
 
     public ChatController(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory, LlmLoggingAdvisor loggingAdvisor) {
+        // TODO(bloque 4): reintroducir LlmLoggingAdvisor cuando se resuelva
+        //   la duplicación de mensajes en Redis causada por su interacción
+        //   con MessageChatMemoryAdvisor. Diagnóstico pendiente:
+        //   posiblemente relacionado con getOrder() y la posición en la
+        //   cadena de advisors. Chat funcional sin él.
         this.chatClient = chatClientBuilder
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),loggingAdvisor)
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
                 .build();
     }
 
@@ -24,7 +29,7 @@ public class ChatController {
         return chatClient
                 .prompt()
                 .user(message)
-                .advisors(a->a.param(ChatMemory.CONVERSATION_ID,conversationId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .call()
                 .content();
     }
