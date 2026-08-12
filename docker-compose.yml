@@ -1,0 +1,21 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: document-analyzer-redis
+    ports:
+      - "6379:6379"
+
+  app:
+    build: .
+    container_name: document-analyzer-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_started
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    profiles:
+      - full-stack
