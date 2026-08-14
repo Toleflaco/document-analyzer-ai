@@ -36,18 +36,18 @@ public class LlmLoggingAdvisor implements CallAdvisor {
         Usage usage = response.chatResponse().getMetadata().getUsage();
         Integer promptTokens = usage.getPromptTokens();
         Integer completionTokens = usage.getCompletionTokens();
-        double coste_usd = (promptTokens / 1_000_000.0) * inputCostPerMillionTokens + (completionTokens / 1_000_000.0) * outputCostPerMillionTokens;
+        double costUsd = (promptTokens / 1_000_000.0) * inputCostPerMillionTokens + (completionTokens / 1_000_000.0) * outputCostPerMillionTokens;
         /*log.atInfo()
                 .setMessage("llm call completed")
                 .addKeyValue("latency_ms", durationMs)
                 .addKeyValue("tokens_in", promptTokens)
                 .addKeyValue("tokens_out", completionTokens)
-                .addKeyValue("cost_usd", coste_usd)
+                .addKeyValue("cost_usd", costUsd)
                 .log();
 
          */
         log.info("llm call completed latency_ms={} tokens_in={} tokens_out={} cost_usd={}",
-                durationMs, promptTokens, completionTokens, String.format("%.6f", coste_usd));
+                durationMs, promptTokens, completionTokens, String.format("%.6f", costUsd));
         return response;
     }
 
