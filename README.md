@@ -28,6 +28,8 @@ curl -G "http://localhost:8080/chat" \
   --data-urlencode "conversationId=sesion-1"
 ```
 
+**Observabilidad:** LlmLoggingAdvisor mide latencia, tokens y coste estimado por llamada.
+
 ### `POST /analyze`
 
 Extracción estructurada de datos de un CV en texto plano. Prompt externalizado en `src/main/resources/prompts/analyze-cv.st`. La conversión del output del modelo a `CvSummary` usa `BeanOutputConverter`.
@@ -74,7 +76,13 @@ Común a `/analyze` y `/analyze/pdf`.
 
 `LlmLoggingAdvisor` (package `observability/`), advisor custom de Spring AI (`CallAdvisor`). Mide latencia, extrae tokens de la respuesta y calcula coste estimado por llamada. Los precios de input/output por millón de tokens están externalizados en `application.properties` (`llm.pricing.input-per-mtok`, `llm.pricing.output-per-mtok`), no hardcodeados en el advisor.
 
-**Estado actual**: activo en `/analyze` y `/analyze/pdf`, temporalmente desactivado en `/chat` por una interacción no diagnosticada con `MessageChatMemoryAdvisor` que duplica mensajes en Redis. Ver TODO en `ChatController.java`.
+**Estado actual**: completamente operativo en `/chat`, `/analyze` y `/analyze/pdf`. Configurado con `getOrder() = 100` para ejecutarse después de `MessageChatMemoryAdvisor`, evitando duplicación de mensajes en Redis y garantizando observabilidad en todo el flujo conversacional.
+
+**Salida de logs:**
+
+```
+[main] INFO  LlmLoggingAdvisor - llm call completed latency_ms=450 tokens_in=25 tokens_out=187 cost_usd=0.000128
+```
 
 ## Manejo de errores
 
@@ -94,8 +102,12 @@ Común a `/analyze` y `/analyze/pdf`.
 | `spring.ai.anthropic.api-key` | `${ANTHROPIC_API_KEY}` (variable de entorno, nunca en el repo) |
 | `spring.data.redis.host` | `localhost` (en despliegue containerizado se sobrescribe a `redis`) |
 | `spring.data.redis.port` | `6379` |
+| `llm.pricing.input-per-mtok` | `0.003` (USD por millón de tokens de entrada) |
+| `llm.pricing.output-per-mtok` | `0.015` (USD por millón de tokens de salida) |
 
 ## Cómo arrancar en local
+
+### Opción 1: Todo en Docker (recomendado)
 
 1. Clona el repositorio:
 
@@ -106,28 +118,69 @@ Común a `/analyze` y `/analyze/pdf`.
 
 2. Consigue una API key de Anthropic: regístrate en [console.anthropic.com](https://console.anthropic.com), genera una clave y guárdala en un lugar seguro (no en el repo).
 
-3. Exporta la clave como variable de entorno:
+3. Levanta la stack (app + Redis):
 
    ```bash
    export ANTHROPIC_API_KEY=<tu-clave-real>
-   ```
-
-4. Levanta Redis (necesario para `/chat`):
-
-   ```bash
-   docker compose up redis -d
-   ```
-
-5. Arranca la aplicación:
-
-   ```bash
-   ./mvnw spring-boot:run
+   docker compose up --build
    ```
 
 El servidor levanta en `http://localhost:8080`. Redis escucha en `localhost:6379`.
 
-El `docker-compose.yml` incluye también un servicio `app` bajo profile `full-stack` para levantar toda la stack en contenedores (`docker compose --profile full-stack up`), útil para verificar el despliegue containerizado sin arrancar la app desde el IDE.
+### Opción 2: App local, Redis en Docker
+
+1. Clona el repositorio:
+
+   ```bash
+   git clone https://github.com/Toleflaco/document-analyzer-ai.git
+   cd document-analyzer-ai
+   ```
+
+2. Consigue una API key de Anthropic (igual que arriba).
+
+3. Levanta SOLO Redis:
+
+   ```bash
+   docker run -d -p 6379:6379 redis:7.4-alpine
+   ```
+
+4. Arranca la aplicación desde el IDE o terminal:
+
+   ```bash
+   export ANTHROPIC_API_KEY=<tu-clave-real>
+   ./mvnw spring-boot:run
+   ```
+
+El servidor levanta en `http://localhost:8080`.
+
+### Pruebas
+
+Una vez arrancado:
+
+```bash
+# Chat conversacional (memoria persistida en Redis)
+curl -G "http://localhost:8080/chat" \
+  --data-urlencode "message=¿Qué es Spring AI?" \
+  --data-urlencode "conversationId=sesion-1"
+
+# Analizar CV en texto plano
+curl -X POST "http://localhost:8080/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{"cv":"Manuel Toledano\nDesarrollador Java\n18 años experiencia..."}'
+
+# Analizar CV en PDF
+curl -X POST "http://localhost:8080/analyze/pdf" \
+  -F "file=@cv.pdf"
+```
 
 ## Estado del roadmap
 
-Proyecto vehículo cerrado de la **Fase 1** del [AI Engineer Roadmap · Java + Spring AI](https://github.com/Toleflaco/ai-engineer-roadmap-java). Las siguientes fases del roadmap se cubren en proyectos independientes.
+Proyecto vehículo cerrado de la **Fase 1** del [AI Engineer Roadmap · Java + Spring AI](https://github.com/Toleflaco/ai-engineer-roadmap-java). Las siguientes fases del roadmap se cubren en proyectos independientes:
+
+- **Fase 2:** [erp-mcp-server](https://github.com/Toleflaco/erp-mcp-server) — MCP server con Spring AI
+- **Fase 3:** Knowledge base empresarial con RAG (planificado)
+- **Fase 4–5:** Observabilidad y despliegue en AWS (planificado)
+
+---
+
+*Última actualización: 2026-09-20*
