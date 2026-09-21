@@ -1,5 +1,11 @@
 # Document Analyzer AI · Spring AI + Anthropic Claude
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot 4.1](https://img.shields.io/badge/Spring%20Boot-4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring AI 2.0](https://img.shields.io/badge/Spring%20AI-2.0-blue.svg)](https://spring.io/projects/spring-ai)
+[![Anthropic Claude](https://img.shields.io/badge/Anthropic-Claude%20Sonnet%204.5-D97757.svg)](https://www.anthropic.com/)
+
 API de análisis de documentos con Spring Boot y Spring AI. Análisis estructurado de CVs a partir de texto plano o PDF, con extracción de datos vía LLM. Memoria de chat persistida en Redis.
 
 ## Contexto
